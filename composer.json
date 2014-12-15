@@ -1,0 +1,23 @@
+{
+    "name": "kurl/silex-doctrine-migrations-provider",
+    "description": "A doctrine migrations provider for silex",
+    "license": "MIT",
+    "version": "0.1.0",
+    "type": "project",
+    "require": {
+        "php": ">=5.3.3"
+    },
+    "require-dev": {
+        "phpunit/phpunit": "~3.7",
+        "silex/silex": "~1.0",
+        "symfony/console": "~2.3",
+        "doctrine/dbal": "2.2.*",
+        "doctrine/migrations": "1.0.*@dev"
+    },
+    "autoload": {
+        "psr-0": { "": "src/" }
+    },
+    "config": {
+        "bin-dir": "bin"
+    }
+}

@@ -29,7 +29,7 @@ $app->register(
         'migrations.directory'  => __DIR__ . '/../path/to/migrations',
         'migrations.name'       => 'Acme Migrations',
         'migrations.namespace'  => 'Acme\Migrations',
-        'migrations.table_name' => 'Acme Migrations',
+        'migrations.table_name' => 'acme_migrations',
     )
 );
 ```

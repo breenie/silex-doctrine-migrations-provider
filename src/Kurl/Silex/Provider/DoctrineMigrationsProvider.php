@@ -12,6 +12,7 @@ use Doctrine\DBAL\Migrations\Configuration\Configuration;
 use Doctrine\DBAL\Migrations\OutputWriter;
 use Doctrine\DBAL\Migrations\Tools\Console\Command\AbstractCommand;
 use Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper;
+use Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper;
 use Silex\Application;
 use Silex\ServiceProviderInterface;
 use Symfony\Component\Console\Application as Console;
@@ -78,15 +79,16 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
      */
     public function boot(Application $app)
     {
-        $this->console->setHelperSet(
-            new HelperSet(
-                array(
-                    'connection' => new ConnectionHelper($app['db']),
-                    'dialog'     => new DialogHelper(),
-                    //'em' => new \Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper($em)
-                )
-            )
-        );
+        $helperSet = new HelperSet(array(
+            'connection' => new ConnectionHelper($app['db']),
+            'dialog'     => new DialogHelper(),
+        ));
+
+        if (isset($app['orm.em'])) {
+            $helperSet->set(new EntityManagerHelper($app['orm.em']), 'em');
+        }
+
+        $this->console->setHelperSet($helperSet);
 
         $commands = array(
             'Doctrine\DBAL\Migrations\Tools\Console\Command\ExecuteCommand',

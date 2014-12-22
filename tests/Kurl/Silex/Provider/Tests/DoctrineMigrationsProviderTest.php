@@ -17,11 +17,13 @@ use Symfony\Component\Console\Application as Console;
  * Class DoctrineMigrationsProviderTest
  *
  * @package Kurl\Silex\Provider\Tests
+ * @coversDefaultClass Kurl\Silex\Provider\DoctrineMigrationsProvider
  */
 class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
 {
     /**
-     * Basic sanity checks.
+     * @covers ::register
+     * @covers ::boot
      */
     public function testDefaults()
     {
@@ -44,6 +46,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($console->has('migrations:migrate'));
         $this->assertFalse($console->has('migrations:status'));
         $this->assertFalse($console->has('migrations:version'));
+        $this->assertFalse($console->has('migrations:diff'));
 
         $app->boot();
 
@@ -52,5 +55,35 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($console->has('migrations:migrate'));
         $this->assertTrue($console->has('migrations:status'));
         $this->assertTrue($console->has('migrations:version'));
+        $this->assertFalse($console->has('migrations:diff'));
+    }
+
+    /**
+     * @covers ::boot
+     */
+    public function testDefaultsWithOrm()
+    {
+        $app = new Silex();
+        $app['db'] = $this->getMockBuilder('Doctrine\DBAL\Connection')->disableOriginalConstructor()->getMock();
+        $app['orm.em'] = $this->getMockBuilder('Doctrine\ORM\EntityManager')->disableOriginalConstructor()->getMock();
+
+        $console = new Console();
+        $app->register(new DoctrineMigrationsProvider($console));
+
+        $this->assertFalse($console->has('migrations:execute'));
+        $this->assertFalse($console->has('migrations:generate'));
+        $this->assertFalse($console->has('migrations:migrate'));
+        $this->assertFalse($console->has('migrations:status'));
+        $this->assertFalse($console->has('migrations:version'));
+        $this->assertFalse($console->has('migrations:diff'));
+
+        $app->boot();
+
+        $this->assertTrue($console->has('migrations:execute'));
+        $this->assertTrue($console->has('migrations:generate'));
+        $this->assertTrue($console->has('migrations:migrate'));
+        $this->assertTrue($console->has('migrations:status'));
+        $this->assertTrue($console->has('migrations:version'));
+        $this->assertTrue($console->has('migrations:diff'));
     }
 }

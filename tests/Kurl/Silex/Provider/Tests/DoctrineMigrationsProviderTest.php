@@ -48,7 +48,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($console->has('migrations:version'));
         $this->assertFalse($console->has('migrations:diff'));
 
-        $app['migrations.directory'] = __DIR__ . '/migrations';
+        $app['migrations.directory'] = __DIR__ . '/Migrations';
         $app['migrations.namespace'] = 'Kurl\Silex\Provider\Tests\Migrations';
 
         $app->boot();
@@ -80,7 +80,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertFalse($console->has('migrations:version'));
         $this->assertFalse($console->has('migrations:diff'));
 
-        $app['migrations.directory'] = __DIR__ . '/migrations';
+        $app['migrations.directory'] = __DIR__ . '/Migrations';
         $app['migrations.namespace'] = 'Kurl\Silex\Provider\Tests\Migrations';
 
         $app->boot();

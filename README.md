@@ -4,15 +4,10 @@ A doctrine migrations provider for Silex.
 
 ## Installation
 
-Add the dependency to the require in your `composer.json`.
+Install the provider through Composer:
 
-```json
-{
-    "require": {
-        "doctrine/migrations": "1.0.*@dev",
-        "kurl/silex-doctrine-migrations-provider": "~0.1"
-    }
-}
+```bash
+composer require kurl/silex-doctrine-migrations-provider
 ```
 
 ## Usage

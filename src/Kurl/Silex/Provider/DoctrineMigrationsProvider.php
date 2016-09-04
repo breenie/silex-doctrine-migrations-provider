@@ -10,11 +10,13 @@ namespace Kurl\Silex\Provider;
 
 use Doctrine\DBAL\Migrations\Configuration\Configuration;
 use Doctrine\DBAL\Migrations\OutputWriter;
-use Doctrine\DBAL\Migrations\Tools\Console\Command\AbstractCommand;
+use Doctrine\DBAL\Migrations\Tools\Console\Command as MigrationsCommand;
 use Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper;
 use Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper;
+use Pimple\Container;
+use Pimple\ServiceProviderInterface;
 use Silex\Application;
-use Silex\ServiceProviderInterface;
+use Silex\Api\BootableProviderInterface;
 use Symfony\Component\Console\Application as Console;
 use Symfony\Component\Console\Helper\DialogHelper;
 use Symfony\Component\Console\Helper\HelperSet;
@@ -25,7 +27,9 @@ use Symfony\Component\Console\Output\ConsoleOutput;
  *
  * @package Kurl\Silex\Provider
  */
-class DoctrineMigrationsProvider implements ServiceProviderInterface
+class DoctrineMigrationsProvider implements
+    ServiceProviderInterface,
+    BootableProviderInterface
 {
 
     /**
@@ -51,9 +55,9 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
      * This method should only be used to configure services and parameters.
      * It should not get services.
      *
-     * @param Application $app An Application instance
+     * @param Container $app A Pimple container instance
      */
-    public function register(Application $app)
+    public function register(Container $app)
     {
         $app['migrations.output_writer'] = new OutputWriter(
             function ($message) {
@@ -75,14 +79,14 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
      * and should be used for "dynamic" configuration (whenever
      * a service must be requested).
      *
-     * @param Application $app
+     * @param Application $app A Silex application instance
      */
     public function boot(Application $app)
     {
-        $helperSet = new HelperSet(array(
+        $helperSet = new HelperSet([
             'connection' => new ConnectionHelper($app['db']),
             'dialog'     => new DialogHelper(),
-        ));
+        ]);
 
         if (isset($app['orm.em'])) {
             $helperSet->set(new EntityManagerHelper($app['orm.em']), 'em');
@@ -90,17 +94,17 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
 
         $this->console->setHelperSet($helperSet);
 
-        $commands = array(
-            'Doctrine\DBAL\Migrations\Tools\Console\Command\ExecuteCommand',
-            'Doctrine\DBAL\Migrations\Tools\Console\Command\GenerateCommand',
-            'Doctrine\DBAL\Migrations\Tools\Console\Command\MigrateCommand',
-            'Doctrine\DBAL\Migrations\Tools\Console\Command\StatusCommand',
-            'Doctrine\DBAL\Migrations\Tools\Console\Command\VersionCommand'
-        );
+        $commands = [
+            MigrationsCommand\ExecuteCommand::class,
+            MigrationsCommand\GenerateCommand::class,
+            MigrationsCommand\MigrateCommand::class,
+            MigrationsCommand\StatusCommand::class,
+            MigrationsCommand\VersionCommand::class,
+        ];
 
         // @codeCoverageIgnoreStart
         if (true === $this->console->getHelperSet()->has('em')) {
-            $commands[] = 'Doctrine\DBAL\Migrations\Tools\Console\Command\DiffCommand';
+            $commands[] = MigrationsCommand\DiffCommand::class;
         }
         // @codeCoverageIgnoreEnd
 
@@ -114,7 +118,7 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
         $configuration->registerMigrationsFromDirectory($app['migrations.directory']);
 
         foreach ($commands as $name) {
-            /** @var AbstractCommand $command */
+            /** @var MigrationsCommand\AbstractCommand $command */
             $command = new $name();
             $command->setMigrationConfiguration($configuration);
             $this->console->add($command);

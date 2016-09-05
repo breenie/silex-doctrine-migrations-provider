@@ -15,10 +15,10 @@
         "phpunit/phpunit": "^3.7"
     },
     "autoload": {
-        "psr-0": { "": "src/" }
+        "psr-4": { "Kurl\\Silex\\Provider\\": "src/" }
     },
     "autoload-dev": {
-        "psr-0": { "": "tests/" }
+        "psr-4": { "Kurl\\Silex\\Provider\\Tests\\": "tests/" }
     },
     "config": {
         "bin-dir": "bin"

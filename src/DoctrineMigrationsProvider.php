@@ -18,8 +18,7 @@ use Pimple\ServiceProviderInterface;
 use Silex\Application;
 use Silex\Api\BootableProviderInterface;
 use Symfony\Component\Console\Application as Console;
-use Symfony\Component\Console\Helper\DialogHelper;
-use Symfony\Component\Console\Helper\HelperSet;
+use Symfony\Component\Console\Helper as Helper;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 /**
@@ -74,16 +73,21 @@ class DoctrineMigrationsProvider implements
         $app['migrations.table_name'] = 'migration_versions';
 
         $app['migrations.em_helper_set'] = function (Container $app) {
-            $helperSet = new HelperSet([
+            $helpers = [
                 'connection' => new ConnectionHelper($app['db']),
-                'dialog'     => new DialogHelper(),
-            ]);
+            ];
 
-            if (isset($app['orm.em'])) {
-                $helperSet->set(new EntityManagerHelper($app['orm.em']), 'em');
+            if (class_exists(Helper\QuestionHelper::class)) {
+                $helpers['question'] = new Helper\QuestionHelper();
+            } else {
+                $helpers['dialog'] = new Helper\DialogHelper();
             }
 
-            return $helperSet;
+            if (isset($app['orm.em'])) {
+                $helpers['em'] = new EntityManagerHelper($app['orm.em']);
+            }
+
+            return new Helper\HelperSet($helpers);
         };
 
         $app['migrations.configuration'] = function (Container $app) {

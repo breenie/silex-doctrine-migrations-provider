@@ -30,7 +30,6 @@ class DoctrineMigrationsProvider implements
     ServiceProviderInterface,
     BootableProviderInterface
 {
-
     /**
      * The console application.
      *
@@ -43,7 +42,7 @@ class DoctrineMigrationsProvider implements
      *
      * @param Console $console
      */
-    public function __construct(Console $console)
+    public function __construct(Console $console = null)
     {
         $this->console = $console;
     }
@@ -113,7 +112,7 @@ class DoctrineMigrationsProvider implements
             ];
 
             // @codeCoverageIgnoreStart
-            if (true === $this->console->getHelperSet()->has('em')) {
+            if (true === $this->getConsole($app)->getHelperSet()->has('em')) {
                 $commands[] = MigrationsCommand\DiffCommand::class;
             }
             // @codeCoverageIgnoreEnd
@@ -145,7 +144,33 @@ class DoctrineMigrationsProvider implements
      */
     public function boot(Application $app)
     {
-        $this->console->setHelperSet($app['migrations.em_helper_set']);
-        $this->console->addCommands($app['migrations.commands']);
+        $console = $this->getConsole($app);
+
+        $console->setHelperSet($app['migrations.em_helper_set']);
+        $console->addCommands($app['migrations.commands']);
+    }
+
+    /**
+     * Gets the console application.
+     *
+     * @param Container $app
+     *
+     * @return mixed|null|Console
+     */
+    public function getConsole(Container $app = null)
+    {
+        $console = null;
+
+        if (null !== $this->console) {
+            $console = $this->console;
+        } else {
+            if (null !== $app && false !== $app->offsetExists('console')) {
+                $console = $app['console'];
+            } else {
+                $console = new Console();
+            }
+        }
+
+        return $console;
     }
 }

@@ -111,8 +111,9 @@ class DoctrineMigrationsProvider implements
                 MigrationsCommand\VersionCommand::class,
             ];
 
+            $console = $this->getConsole($app);
             // @codeCoverageIgnoreStart
-            if (true === $this->getConsole($app)->getHelperSet()->has('em')) {
+            if ($console && true === $console->getHelperSet()->has('em')) {
                 $commands[] = MigrationsCommand\DiffCommand::class;
             }
             // @codeCoverageIgnoreEnd
@@ -146,31 +147,20 @@ class DoctrineMigrationsProvider implements
     {
         $console = $this->getConsole($app);
 
-        $console->setHelperSet($app['migrations.em_helper_set']);
-        $console->addCommands($app['migrations.commands']);
+        if ($console) {
+            $console->setHelperSet($app['migrations.em_helper_set']);
+            $console->addCommands($app['migrations.commands']);
+        }
     }
 
     /**
      * Gets the console application.
      *
      * @param Container $app
-     *
-     * @return mixed|null|Console
+     * @return Console|null
      */
     public function getConsole(Container $app = null)
     {
-        $console = null;
-
-        if (null !== $this->console) {
-            $console = $this->console;
-        } else {
-            if (null !== $app && false !== $app->offsetExists('console')) {
-                $console = $app['console'];
-            } else {
-                $console = new Console();
-            }
-        }
-
-        return $console;
+        return $this->console ?: (isset($app['console']) ? $app['console'] : null);
     }
 }

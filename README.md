@@ -35,17 +35,13 @@ There are also a few other services which the provider uses internally and they 
 - `migrations.configuration`: `Doctrine\DBAL\Migrations\Configuration\Configuration` instance used in the console commands.
 - `migrations.command_names`: Array of command names. You could add your own here to be lazy loaded into `migrations.commands`.
 
-The provider requires an instance of `Symfony\Component\Console\Application` to be passed to its constructor.
-
 You can register the provider and configure it like so:
 
 ```php
 <?php
 
-$console = new \Symfony\Component\Console\Application();
-
 $app->register(
-    new \Kurl\Silex\Provider\DoctrineMigrationsProvider($console),
+    new \Kurl\Silex\Provider\DoctrineMigrationsProvider(),
     array(
         'migrations.directory' => __DIR__ . '/../path/to/migrations',
         'migrations.name' => 'Acme Migrations',
@@ -56,6 +52,8 @@ $app->register(
 ```
 
 ### Silex
+
+You can pass an optional instance of `Symfony\Component\Console\Application` to the constructor of the provider. Alternatively you can set the instance of your Console application to `$app['console']`. If the provider can find the Console application instance it is able to register the commands and helper set for you.
 
 The provider implements `Silex\Api\BootableProviderInterface, so if you use the provider with Silex, booting the application would register the commands for you:
 
@@ -87,7 +85,7 @@ This is made very easy by the provider as it already registered all the needed s
 $console = new \Symfony\Component\Console\Application();
 
 $app->register(
-    new \Kurl\Silex\Provider\DoctrineMigrationsProvider($console),
+    new \Kurl\Silex\Provider\DoctrineMigrationsProvider(),
     array(
         'migrations.directory' => __DIR__ . '/../path/to/migrations',
         'migrations.namespace' => 'Acme\Migrations',

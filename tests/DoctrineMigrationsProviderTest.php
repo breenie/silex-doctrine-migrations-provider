@@ -82,6 +82,15 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
     }
 
     /**
+     * Ensures you get a console even if you don't set one.
+     */
+    public function testOptionalConsoleConstructor()
+    {
+        $provider = new DoctrineMigrationsProvider();
+        $this->assertInstanceOf(Console::class, $provider->getConsole());
+    }
+
+    /**
      * @covers ::register
      * @covers ::boot
      */

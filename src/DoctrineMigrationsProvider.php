@@ -76,7 +76,7 @@ class DoctrineMigrationsProvider implements
                 'connection' => new ConnectionHelper($app['db']),
             ];
 
-            if (class_exists(Helper\QuestionHelper::class)) {
+            if (class_exists('\Symfony\Component\Console\Helper\QuestionHelper')) {
                 $helpers['question'] = new Helper\QuestionHelper();
             } else {
                 $helpers['dialog'] = new Helper\DialogHelper();
@@ -161,6 +161,6 @@ class DoctrineMigrationsProvider implements
      */
     public function getConsole(Container $app = null)
     {
-        return $this->console ?: (isset($app['console']) ? $app['console'] : null);
+        return $this->console ?: (isset($app['console']) ? $app['console'] : new Console());
     }
 }

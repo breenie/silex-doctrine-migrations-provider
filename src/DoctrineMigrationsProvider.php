@@ -18,8 +18,7 @@ use Pimple\ServiceProviderInterface;
 use Silex\Application;
 use Silex\Api\BootableProviderInterface;
 use Symfony\Component\Console\Application as Console;
-use Symfony\Component\Console\Helper\DialogHelper;
-use Symfony\Component\Console\Helper\HelperSet;
+use Symfony\Component\Console\Helper as Helper;
 use Symfony\Component\Console\Output\ConsoleOutput;
 
 /**
@@ -31,7 +30,6 @@ class DoctrineMigrationsProvider implements
     ServiceProviderInterface,
     BootableProviderInterface
 {
-
     /**
      * The console application.
      *
@@ -44,7 +42,7 @@ class DoctrineMigrationsProvider implements
      *
      * @param Console $console
      */
-    public function __construct(Console $console)
+    public function __construct(Console $console = null)
     {
         $this->console = $console;
     }
@@ -59,17 +57,81 @@ class DoctrineMigrationsProvider implements
      */
     public function register(Container $app)
     {
-        $app['migrations.output_writer'] = new OutputWriter(
-            function ($message) {
-                $output = new ConsoleOutput();
-                $output->writeln($message);
-            }
-        );
+        $app['migrations.output_writer'] = function (Container $app) {
+            return new OutputWriter(
+                function ($message) {
+                    $output = new ConsoleOutput();
+                    $output->writeln($message);
+                }
+            );
+        };
 
         $app['migrations.directory']  = null;
         $app['migrations.name']       = 'Migrations';
         $app['migrations.namespace']  = null;
         $app['migrations.table_name'] = 'migration_versions';
+
+        $app['migrations.em_helper_set'] = function (Container $app) {
+            $helpers = [
+                'connection' => new ConnectionHelper($app['db']),
+            ];
+
+            if (class_exists('\Symfony\Component\Console\Helper\QuestionHelper')) {
+                $helpers['question'] = new Helper\QuestionHelper();
+            } else {
+                $helpers['dialog'] = new Helper\DialogHelper();
+            }
+
+            if (isset($app['orm.em'])) {
+                $helpers['em'] = new EntityManagerHelper($app['orm.em']);
+            }
+
+            return new Helper\HelperSet($helpers);
+        };
+
+        $app['migrations.configuration'] = function (Container $app) {
+            $configuration = new Configuration($app['db'], $app['migrations.output_writer']);
+
+            $configuration->setMigrationsDirectory($app['migrations.directory']);
+            $configuration->setName($app['migrations.name']);
+            $configuration->setMigrationsNamespace($app['migrations.namespace']);
+            $configuration->setMigrationsTableName($app['migrations.table_name']);
+
+            $configuration->registerMigrationsFromDirectory($app['migrations.directory']);
+
+            return $configuration;
+        };
+
+        $app['migrations.command_names'] = function (Container $app) {
+            $commands = [
+                MigrationsCommand\ExecuteCommand::class,
+                MigrationsCommand\GenerateCommand::class,
+                MigrationsCommand\MigrateCommand::class,
+                MigrationsCommand\StatusCommand::class,
+                MigrationsCommand\VersionCommand::class,
+            ];
+
+            $console = $this->getConsole($app);
+            // @codeCoverageIgnoreStart
+            if ($console && true === $console->getHelperSet()->has('em')) {
+                $commands[] = MigrationsCommand\DiffCommand::class;
+            }
+            // @codeCoverageIgnoreEnd
+
+            return $commands;
+        };
+
+        $app['migrations.commands'] = function (Container $app) {
+            $commands = [];
+            foreach ($app['migrations.command_names'] as $name) {
+                /** @var MigrationsCommand\AbstractCommand $command */
+                $command = new $name();
+                $command->setMigrationConfiguration($app['migrations.configuration']);
+                $commands[] = $command;
+            }
+
+            return $commands;
+        };
     }
 
     /**
@@ -83,45 +145,22 @@ class DoctrineMigrationsProvider implements
      */
     public function boot(Application $app)
     {
-        $helperSet = new HelperSet([
-            'connection' => new ConnectionHelper($app['db']),
-            'dialog'     => new DialogHelper(),
-        ]);
+        $console = $this->getConsole($app);
 
-        if (isset($app['orm.em'])) {
-            $helperSet->set(new EntityManagerHelper($app['orm.em']), 'em');
+        if ($console) {
+            $console->setHelperSet($app['migrations.em_helper_set']);
+            $console->addCommands($app['migrations.commands']);
         }
+    }
 
-        $this->console->setHelperSet($helperSet);
-
-        $commands = [
-            MigrationsCommand\ExecuteCommand::class,
-            MigrationsCommand\GenerateCommand::class,
-            MigrationsCommand\MigrateCommand::class,
-            MigrationsCommand\StatusCommand::class,
-            MigrationsCommand\VersionCommand::class,
-        ];
-
-        // @codeCoverageIgnoreStart
-        if (true === $this->console->getHelperSet()->has('em')) {
-            $commands[] = MigrationsCommand\DiffCommand::class;
-        }
-        // @codeCoverageIgnoreEnd
-
-        $configuration = new Configuration($app['db'], $app['migrations.output_writer']);
-
-        $configuration->setMigrationsDirectory($app['migrations.directory']);
-        $configuration->setName($app['migrations.name']);
-        $configuration->setMigrationsNamespace($app['migrations.namespace']);
-        $configuration->setMigrationsTableName($app['migrations.table_name']);
-
-        $configuration->registerMigrationsFromDirectory($app['migrations.directory']);
-
-        foreach ($commands as $name) {
-            /** @var MigrationsCommand\AbstractCommand $command */
-            $command = new $name();
-            $command->setMigrationConfiguration($configuration);
-            $this->console->add($command);
-        }
+    /**
+     * Gets the console application.
+     *
+     * @param Container $app
+     * @return Console|null
+     */
+    public function getConsole(Container $app = null)
+    {
+        return $this->console ?: (isset($app['console']) ? $app['console'] : new Console());
     }
 }

@@ -148,7 +148,14 @@ class DoctrineMigrationsProvider implements
         $console = $this->getConsole($app);
 
         if ($console) {
-            $console->setHelperSet($app['migrations.em_helper_set']);
+            $helperSet = $console->getHelperSet();
+
+            foreach ($app['migrations.em_helper_set'] as $name => $helper) {
+                if (false === $helperSet->has($name)) {
+                    $helperSet->set($helper, $name);
+                }
+            }
+
             $console->addCommands($app['migrations.commands']);
         }
     }

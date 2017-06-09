@@ -40,7 +40,7 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
      *
      * @param Console $console
      */
-    public function __construct(Console $console)
+    public function __construct(Console $console = null)
     {
         $this->console = $console;
     }
@@ -88,7 +88,9 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
             $helperSet->set(new EntityManagerHelper($app['orm.em']), 'em');
         }
 
-        $this->console->setHelperSet($helperSet);
+        $console = $this->getConsole($app);
+
+        $console->setHelperSet($helperSet);
 
         $commands = array(
             'Doctrine\DBAL\Migrations\Tools\Console\Command\ExecuteCommand',
@@ -99,7 +101,7 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
         );
 
         // @codeCoverageIgnoreStart
-        if (true === $this->console->getHelperSet()->has('em')) {
+        if (true === $console->getHelperSet()->has('em')) {
             $commands[] = 'Doctrine\DBAL\Migrations\Tools\Console\Command\DiffCommand';
         }
         // @codeCoverageIgnoreEnd
@@ -117,7 +119,18 @@ class DoctrineMigrationsProvider implements ServiceProviderInterface
             /** @var AbstractCommand $command */
             $command = new $name();
             $command->setMigrationConfiguration($configuration);
-            $this->console->add($command);
+            $console->add($command);
         }
+    }
+
+    /**
+     * Gets the console application.
+     *
+     * @param Application $app
+     * @return Console|null
+     */
+    public function getConsole(Application $app = null)
+    {
+        return $this->console ?: ((isset($app['console'])) ? $app['console'] : new Console());
     }
 }

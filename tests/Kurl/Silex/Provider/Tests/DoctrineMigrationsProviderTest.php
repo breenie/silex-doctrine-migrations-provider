@@ -8,10 +8,14 @@
 
 namespace Kurl\Silex\Provider\Tests;
 
+use Doctrine\DBAL\Configuration;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Migrations\OutputWriter;
 use Kurl\Silex\Provider\DoctrineMigrationsProvider;
 use PHPUnit_Framework_TestCase;
 use Silex\Application as Silex;
 use Symfony\Component\Console\Application as Console;
+use Symfony\Component\Console\Command\Command;
 
 /**
  * Class DoctrineMigrationsProviderTest
@@ -91,5 +95,14 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertTrue($console->has('migrations:status'));
         $this->assertTrue($console->has('migrations:version'));
         $this->assertTrue($console->has('migrations:diff'));
+    }
+
+    /**
+     * Ensures you get a console even if you don't set one.
+     */
+    public function testOptionalConsoleConstructor()
+    {
+        $provider = new DoctrineMigrationsProvider();
+        $this->assertInstanceOf(Console::class, $provider->getConsole());
     }
 }

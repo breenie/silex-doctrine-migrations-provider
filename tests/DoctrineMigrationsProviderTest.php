@@ -8,8 +8,10 @@
 
 namespace Kurl\Silex\Provider\Tests;
 
+use Doctrine\DBAL\Platforms\AbstractPlatform;
+use Doctrine\DBAL\Schema\AbstractSchemaManager;
 use Kurl\Silex\Provider\DoctrineMigrationsProvider;
-use PHPUnit_Framework_TestCase;
+use PHPUnit\Framework\TestCase;
 use Pimple\Container;
 use Silex\Application as Silex;
 use Doctrine\DBAL\Connection;
@@ -25,7 +27,7 @@ use Doctrine\DBAL\Migrations\Configuration\Configuration;
  * @package Kurl\Silex\Provider\Tests
  * @coversDefaultClass Kurl\Silex\Provider\DoctrineMigrationsProvider
  */
-class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
+class DoctrineMigrationsProviderTest extends TestCase
 {
     /**
      * @covers ::register
@@ -34,7 +36,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
     public function testDefaults()
     {
         $app = new Silex();
-        $app['db'] = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+        $app['db'] = $this->getConnectionMock();
 
         $console = new Console();
 
@@ -47,12 +49,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertEquals('Migrations', $app['migrations.name']);
         $this->assertEquals('migration_versions', $app['migrations.table_name']);
 
-        $this->assertFalse($console->has('migrations:execute'));
-        $this->assertFalse($console->has('migrations:generate'));
-        $this->assertFalse($console->has('migrations:migrate'));
-        $this->assertFalse($console->has('migrations:status'));
-        $this->assertFalse($console->has('migrations:version'));
-        $this->assertFalse($console->has('migrations:diff'));
+        $this->assertMigrationCommandsAbsent($console);
 
         $app['migrations.directory'] = __DIR__ . '/Migrations';
         $app['migrations.namespace'] = '\Kurl\Silex\Provider\Tests\Migrations';
@@ -60,8 +57,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Configuration::class, $app['migrations.configuration']);
         $this->assertTrue(is_array($app['migrations.command_names']));
         $this->assertTrue(is_array($app['migrations.commands']));
-        $this->assertCount(5, $app['migrations.command_names']);
-        $this->assertCount(5, $app['migrations.commands']);
+        $this->assertCorrectMigrationCommandsCount($app);
 
         foreach ($app['migrations.command_names'] as $commandName) {
             $this->assertTrue(is_string($commandName));
@@ -73,12 +69,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
 
         $app->boot();
 
-        $this->assertTrue($console->has('migrations:execute'));
-        $this->assertTrue($console->has('migrations:generate'));
-        $this->assertTrue($console->has('migrations:migrate'));
-        $this->assertTrue($console->has('migrations:status'));
-        $this->assertTrue($console->has('migrations:version'));
-        $this->assertFalse($console->has('migrations:diff'));
+        $this->assertMigrationCommandsPresent($console);
     }
 
     /**
@@ -97,18 +88,13 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
     public function testDefaultsWithOrm()
     {
         $app = new Silex();
-        $app['db'] = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+        $app['db'] = $this->getConnectionMock();
         $app['orm.em'] = $this->getMockBuilder(EntityManager::class)->disableOriginalConstructor()->getMock();
 
         $console = new Console();
         $app->register(new DoctrineMigrationsProvider($console));
 
-        $this->assertFalse($console->has('migrations:execute'));
-        $this->assertFalse($console->has('migrations:generate'));
-        $this->assertFalse($console->has('migrations:migrate'));
-        $this->assertFalse($console->has('migrations:status'));
-        $this->assertFalse($console->has('migrations:version'));
-        $this->assertFalse($console->has('migrations:diff'));
+        $this->assertMigrationCommandsAbsent($console);
 
         $app['migrations.directory'] = __DIR__ . '/Migrations';
         $app['migrations.namespace'] = 'Kurl\Silex\Provider\Tests\Migrations';
@@ -119,8 +105,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
 
         $this->assertTrue(is_array($app['migrations.command_names']));
         $this->assertTrue(is_array($app['migrations.commands']));
-        $this->assertCount(6, $app['migrations.command_names']);
-        $this->assertCount(6, $app['migrations.commands']);
+        $this->assertCorrectMigrationCommandsCount($app, true);
 
         foreach ($app['migrations.command_names'] as $commandName) {
             $this->assertTrue(is_string($commandName));
@@ -130,12 +115,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
             $this->assertInstanceOf(Command::class, $command);
         }
 
-        $this->assertTrue($console->has('migrations:execute'));
-        $this->assertTrue($console->has('migrations:generate'));
-        $this->assertTrue($console->has('migrations:migrate'));
-        $this->assertTrue($console->has('migrations:status'));
-        $this->assertTrue($console->has('migrations:version'));
-        $this->assertTrue($console->has('migrations:diff'));
+        $this->assertMigrationCommandsPresent($console, true);
     }
 
     /**
@@ -144,7 +124,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
     public function testWithNoConsole()
     {
         $app = new Silex();
-        $app['db'] = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+        $app['db'] = $this->getConnectionMock();
 
         $app->register(new DoctrineMigrationsProvider());
 
@@ -161,8 +141,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Configuration::class, $app['migrations.configuration']);
         $this->assertTrue(is_array($app['migrations.command_names']));
         $this->assertTrue(is_array($app['migrations.commands']));
-        $this->assertCount(5, $app['migrations.command_names']);
-        $this->assertCount(5, $app['migrations.commands']);
+        $this->assertCorrectMigrationCommandsCount($app);
 
         foreach ($app['migrations.command_names'] as $commandName) {
             $this->assertTrue(is_string($commandName));
@@ -181,7 +160,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
     public function testWithPimple()
     {
         $app = new Container();
-        $app['db'] = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+        $app['db'] = $this->getConnectionMock();
 
 
         $app->register(new DoctrineMigrationsProvider());
@@ -199,8 +178,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $this->assertInstanceOf(Configuration::class, $app['migrations.configuration']);
         $this->assertTrue(is_array($app['migrations.command_names']));
         $this->assertTrue(is_array($app['migrations.commands']));
-        $this->assertCount(5, $app['migrations.command_names']);
-        $this->assertCount(5, $app['migrations.commands']);
+        $this->assertCorrectMigrationCommandsCount($app);
 
         foreach ($app['migrations.command_names'] as $commandName) {
             $this->assertTrue(is_string($commandName));
@@ -218,7 +196,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
     public function testWithConsoleFromContainer()
     {
         $app = new Silex();
-        $app['db'] = $this->getMockBuilder(Connection::class)->disableOriginalConstructor()->getMock();
+        $app['db'] = $this->getConnectionMock();
 
         $app->register(new DoctrineMigrationsProvider());
 
@@ -235,18 +213,12 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $console = new Console();
         $app['console'] = $console;
 
-        $this->assertFalse($console->has('migrations:execute'));
-        $this->assertFalse($console->has('migrations:generate'));
-        $this->assertFalse($console->has('migrations:migrate'));
-        $this->assertFalse($console->has('migrations:status'));
-        $this->assertFalse($console->has('migrations:version'));
-        $this->assertFalse($console->has('migrations:diff'));
+        $this->assertMigrationCommandsAbsent($console);
 
         $this->assertInstanceOf(Configuration::class, $app['migrations.configuration']);
         $this->assertTrue(is_array($app['migrations.command_names']));
         $this->assertTrue(is_array($app['migrations.commands']));
-        $this->assertCount(5, $app['migrations.command_names']);
-        $this->assertCount(5, $app['migrations.commands']);
+        $this->assertCorrectMigrationCommandsCount($app);
 
         foreach ($app['migrations.command_names'] as $commandName) {
             $this->assertTrue(is_string($commandName));
@@ -258,12 +230,7 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
 
         $app->boot();
 
-        $this->assertTrue($console->has('migrations:execute'));
-        $this->assertTrue($console->has('migrations:generate'));
-        $this->assertTrue($console->has('migrations:migrate'));
-        $this->assertTrue($console->has('migrations:status'));
-        $this->assertTrue($console->has('migrations:version'));
-        $this->assertFalse($console->has('migrations:diff'));
+        $this->assertMigrationCommandsPresent($console);
     }
 
     public function dataGetConsole()
@@ -292,5 +259,70 @@ class DoctrineMigrationsProviderTest extends PHPUnit_Framework_TestCase
         $app['console'] = $containerConsole;
         $provider = new DoctrineMigrationsProvider($constructorConsole);
         $this->assertSame($expected, $provider->getConsole($app));
+    }
+
+    /**
+     * @return Connection
+     */
+    private function getConnectionMock()
+    {
+        $connection = $this->prophesize(Connection::class);
+        $connection->getSchemaManager()->willReturn($this->prophesize(AbstractSchemaManager::class)->reveal());
+        $connection->getDatabasePlatform()->willReturn($this->prophesize(AbstractPlatform::class)->reveal());
+
+        return $connection->reveal();
+    }
+
+    /**
+     * Verifies that none of the Doctrine Migrations commands are attached to the Console application
+     *
+     * @param Console $console
+     */
+    private function assertMigrationCommandsAbsent(Console $console)
+    {
+        $this->assertFalse($console->has('migrations:execute'));
+        $this->assertFalse($console->has('migrations:generate'));
+        $this->assertFalse($console->has('migrations:latest'));
+        $this->assertFalse($console->has('migrations:migrate'));
+        $this->assertFalse($console->has('migrations:status'));
+        $this->assertFalse($console->has('migrations:version'));
+        $this->assertFalse($console->has('migrations:diff'));
+        $this->assertFalse($console->has('migrations:up-to-date'));
+    }
+
+    /**
+     * Verifies that all of the expected Doctrine Migrations commands are attached to the Console application
+     *
+     * @param Console $console
+     * @param bool $hasOrm
+     */
+    private function assertMigrationCommandsPresent(Console $console, $hasOrm = false)
+    {
+        $this->assertTrue($console->has('migrations:execute'));
+        $this->assertTrue($console->has('migrations:generate'));
+        $this->assertTrue($console->has('migrations:latest'));
+        $this->assertTrue($console->has('migrations:migrate'));
+        $this->assertTrue($console->has('migrations:status'));
+        $this->assertTrue($console->has('migrations:version'));
+        $this->assertTrue($console->has('migrations:up-to-date'));
+
+        if ($hasOrm) {
+            $this->assertTrue($console->has('migrations:diff'));
+        } else {
+            $this->assertFalse($console->has('migrations:diff'));
+        }
+    }
+
+    /**
+     * Verifies that the correct number of Doctrine Migration commands have been attached to the Console application
+     *
+     * @param Container $container
+     * @param bool $hasOrm
+     */
+    private function assertCorrectMigrationCommandsCount(Container $container, $hasOrm = false)
+    {
+        $expectedCount = $hasOrm ? 8 : 7;
+        $this->assertCount($expectedCount, $container['migrations.command_names']);
+        $this->assertCount($expectedCount, $container['migrations.commands']);
     }
 }

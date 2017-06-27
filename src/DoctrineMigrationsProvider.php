@@ -106,9 +106,11 @@ class DoctrineMigrationsProvider implements
             $commands = [
                 MigrationsCommand\ExecuteCommand::class,
                 MigrationsCommand\GenerateCommand::class,
+                MigrationsCommand\LatestCommand::class,
                 MigrationsCommand\MigrateCommand::class,
                 MigrationsCommand\StatusCommand::class,
                 MigrationsCommand\VersionCommand::class,
+                MigrationsCommand\UpToDateCommand::class,
             ];
 
             $console = $this->getConsole($app);

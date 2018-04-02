@@ -1,28 +1,32 @@
 {
-    "name": "kurl/silex-doctrine-migrations-provider",
-    "description": "A doctrine migrations provider for silex",
-    "license": "MIT",
-    "type": "library",
-    "require": {
-        "php": "^7.1.0",
-        "doctrine/dbal": "^2.2",
-        "pimple/pimple": "^3.0",
-        "silex/api": "^2.0",
-        "doctrine/migrations": "^1.5",
-        "symfony/console": "^2.3 | ^3.0"
-    },
-    "require-dev": {
-        "doctrine/orm": "^2.2",
-        "silex/silex": "^2.0",
-        "phpunit/phpunit": "^5.7"
-    },
-    "autoload": {
-        "psr-4": { "Kurl\\Silex\\Provider\\": "src/" }
-    },
-    "autoload-dev": {
-        "psr-4": { "Kurl\\Silex\\Provider\\Tests\\": "tests/" }
-    },
-    "config": {
-        "bin-dir": "bin"
+  "name": "kurl/silex-doctrine-migrations-provider",
+  "description": "A doctrine migrations provider for silex",
+  "license": "MIT",
+  "type": "library",
+  "require": {
+    "php": "^7.1.0",
+    "doctrine/dbal": "^2.2",
+    "pimple/pimple": "^3.0",
+    "silex/api": "^2.0",
+    "doctrine/migrations": "^1.5",
+    "symfony/console": "^2.3 | ^3.0"
+  },
+  "require-dev": {
+    "doctrine/orm": "^2.2",
+    "silex/silex": "^2.0",
+    "phpunit/phpunit": "^5.7"
+  },
+  "autoload": {
+    "psr-4": {
+      "Kurl\\Silex\\Provider\\": "src/"
     }
+  },
+  "autoload-dev": {
+    "psr-4": {
+      "Kurl\\Silex\\Provider\\Tests\\": "tests/"
+    }
+  },
+  "config": {
+    "bin-dir": "bin"
+  }
 }

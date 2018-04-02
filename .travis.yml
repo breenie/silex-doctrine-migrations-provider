@@ -12,6 +12,7 @@ cache:
   - vendor
 before_install:
   - sudo pip install codecov
+
 install:
   - cp phpunit.xml.dist phpunit.xml
   - travis_retry composer self-update && composer --version

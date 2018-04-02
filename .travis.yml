@@ -1,0 +1,28 @@
+language: php
+php:
+  - 7.0
+  - 7.1
+  - 7.2
+matrix:
+  fast_finish: true
+sudo: true
+cache:
+  directories:
+  - vendor
+before_install:
+  - sudo pip install codecov
+install:
+  - travis_retry composer self-update && composer --version
+  - export PATH="$HOME/.composer/vendor/bin:$PATH"
+  - travis_retry composer install --prefer-dist --no-interaction
+script:
+  - ./vendor/bin/phpunit --coverage-clover coverage.xml
+after_success:
+  - codecov
+after_script:
+  - travis_retry wget https://scrutinizer-ci.com/ocular.phar
+  - php ocular.phar code-coverage:upload --format=php-clover coverage.xml
+notifications:
+  email: false
+  slack:
+    secure: NP+4haTky9lencEsAHCeEzNY73P0+ti4mhu2A4/uPzUEKNA9aw/YrKu+HXHh4gRHOl/NuRYW2aO0CGYYCOgGBM1NrMx4ZwwYsVkPlczv3/bFTD83CIdVBnRXcngqH+ea0+wk95LlWEtLPAd26/QVKot8ao+6s8PUwRLbSrwbjwz+1bOYdVSP1Jq2UFd8V2kCgi06l0GAu1pEf9EmKB6IIArR97EtIcqmIyeI+GWFKRrSr/uD22+UqDgAYWshNzgdWcjrVaUE/UfvdWfHdt5fXpRi+8O1Qbv7AR5dA7IeiRVn/n41bhjfwj/QZG6yc4dwMt3GkGHS4iYTRJsaEHjNqUA+LfvQfKqhU8waTtrXp8z6jpZl89YgxvpsAAHVzt0Yz/R1X/ooN7mV38GJy8uauQBwps4NklZg/2CPzqlPyFYk9UhxmN890SUp8QCrxmw30enXtYeWHutbcYRYJDAA071Zozg468Kn3TkB0iiiOGpWhG7tvaQHtVJ1BXxhn2gw/51sHa414Jn/Ic0JzowmLQN2jlUcxWe849t5ktaJKh+eufATQ3ryzvcWRbDTSSP0BjtbmEziSdeiJ+z2aBshH2gaHwBgedBx0+LmuTDtvXvX0SoInMcNJOqTwl3ztMCtCsAkg81hppimZlQFVoRBbW5ZPOnIRBIRqnkYESS0+xI=

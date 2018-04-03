@@ -4,6 +4,7 @@
   "license": "MIT",
   "type": "library",
   "require": {
+    "php": ">=5.6",
     "pimple/pimple": "^3.0",
     "doctrine/dbal": "^2.2",
     "silex/api": "^2.0",

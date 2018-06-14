@@ -18,8 +18,8 @@ use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManager;
 use Symfony\Component\Console\Command\Command;
 use Symfony\Component\Console\Application as Console;
-use Doctrine\DBAL\Migrations\OutputWriter;
-use Doctrine\DBAL\Migrations\Configuration\Configuration;
+use Doctrine\Migrations\OutputWriter;
+use Doctrine\Migrations\Configuration\Configuration;
 
 /**
  * Class DoctrineMigrationsProviderTest
@@ -280,10 +280,12 @@ class DoctrineMigrationsProviderTest extends TestCase
      */
     private function assertMigrationCommandsAbsent(Console $console)
     {
+        $this->assertFalse($console->has('migrations:dump-schema'));
         $this->assertFalse($console->has('migrations:execute'));
         $this->assertFalse($console->has('migrations:generate'));
         $this->assertFalse($console->has('migrations:latest'));
         $this->assertFalse($console->has('migrations:migrate'));
+        $this->assertFalse($console->has('migrations:rollup'));
         $this->assertFalse($console->has('migrations:status'));
         $this->assertFalse($console->has('migrations:version'));
         $this->assertFalse($console->has('migrations:diff'));
@@ -299,9 +301,11 @@ class DoctrineMigrationsProviderTest extends TestCase
     private function assertMigrationCommandsPresent(Console $console, $hasOrm = false)
     {
         $this->assertTrue($console->has('migrations:execute'));
+        $this->assertTrue($console->has('migrations:dump-schema'));
         $this->assertTrue($console->has('migrations:generate'));
         $this->assertTrue($console->has('migrations:latest'));
         $this->assertTrue($console->has('migrations:migrate'));
+        $this->assertTrue($console->has('migrations:rollup'));
         $this->assertTrue($console->has('migrations:status'));
         $this->assertTrue($console->has('migrations:version'));
         $this->assertTrue($console->has('migrations:up-to-date'));
@@ -321,7 +325,7 @@ class DoctrineMigrationsProviderTest extends TestCase
      */
     private function assertCorrectMigrationCommandsCount(Container $container, $hasOrm = false)
     {
-        $expectedCount = $hasOrm ? 8 : 7;
+        $expectedCount = $hasOrm ? 10 : 9;
         $this->assertCount($expectedCount, $container['migrations.command_names']);
         $this->assertCount($expectedCount, $container['migrations.commands']);
     }

@@ -8,9 +8,9 @@
 
 namespace Kurl\Silex\Provider;
 
-use Doctrine\DBAL\Migrations\Configuration\Configuration;
-use Doctrine\DBAL\Migrations\OutputWriter;
-use Doctrine\DBAL\Migrations\Tools\Console\Command as MigrationsCommand;
+use Doctrine\Migrations\Configuration\Configuration;
+use Doctrine\Migrations\OutputWriter;
+use Doctrine\Migrations\Tools\Console\Command as MigrationsCommand;
 use Doctrine\DBAL\Tools\Console\Helper\ConnectionHelper;
 use Doctrine\ORM\Tools\Console\Helper\EntityManagerHelper;
 use Pimple\Container;
@@ -55,7 +55,7 @@ class DoctrineMigrationsProvider implements
      *
      * @param Container $app A Pimple container instance
      */
-    public function register(Container $app)
+    public function register(Container $app): void
     {
         $app['migrations.output_writer'] = function (Container $app) {
             return new OutputWriter(
@@ -104,10 +104,12 @@ class DoctrineMigrationsProvider implements
 
         $app['migrations.command_names'] = function (Container $app) {
             $commands = [
+                MigrationsCommand\DumpSchemaCommand::class,
                 MigrationsCommand\ExecuteCommand::class,
                 MigrationsCommand\GenerateCommand::class,
                 MigrationsCommand\LatestCommand::class,
                 MigrationsCommand\MigrateCommand::class,
+                MigrationsCommand\RollupCommand::class,
                 MigrationsCommand\StatusCommand::class,
                 MigrationsCommand\VersionCommand::class,
                 MigrationsCommand\UpToDateCommand::class,
@@ -145,7 +147,7 @@ class DoctrineMigrationsProvider implements
      *
      * @param Application $app A Silex application instance
      */
-    public function boot(Application $app)
+    public function boot(Application $app): void
     {
         $console = $this->getConsole($app);
 
@@ -168,7 +170,7 @@ class DoctrineMigrationsProvider implements
      * @param Container $app
      * @return Console|null
      */
-    public function getConsole(Container $app = null)
+    public function getConsole(Container $app = null): ?Console
     {
         return $this->console ?: (isset($app['console']) ? $app['console'] : new Console());
     }
